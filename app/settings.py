@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     max_context_chars: int = 8000
 
     # Configuración de Pydantic para que lea el archivo .env
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra='ignore')
 
 
 # Se crea una instancia única de la configuración para ser usada en toda la aplicación
