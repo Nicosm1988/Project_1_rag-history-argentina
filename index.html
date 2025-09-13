@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia Argentina - Archivo Digital</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #fdfdfc;
+            color: #333;
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 2rem 3rem;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid #8B0000; /* Bordó oscuro */
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2.5rem;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        header p {
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        #qa-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        #question-input {
+            flex-grow: 1;
+            padding: 0.8rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #ask-button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            background-color: #8B0000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #ask-button:hover {
+            background-color: #a52a2a;
+        }
+
+        #response-area h2 {
+            font-family: 'Crimson Text', serif;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+
+        #answer {
+            white-space: pre-wrap; /* Mantiene los saltos de línea */
+        }
+
+        #citations {
+            margin-top: 2rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .citation {
+            font-size: 0.9rem;
+            background-color: #fafafa;
+            border-left: 3px solid #ccc;
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .loader {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Archivo Digital de Historia</h1>
+            <p>Facultad de Humanidades y Ciencias Sociales</p>
+        </header>
+
+        <form id="qa-form">
+            <input type="text" id="question-input" placeholder="Escriba su consulta aquí..." required>
+            <button type="submit" id="ask-button">Consultar</button>
+        </form>
+
+        <div id="response-area" style="display:none;">
+            <div id="answer-container">
+                <h2>Respuesta del Archivo</h2>
+                <p id="answer"></p>
+            </div>
+            <div id="citations">
+                <h3>Fuentes Consultadas</h3>
+                <div id="citations-list"></div>
+            </div>
+        </div>
+        
+        <div id="loader" class="loader" style="display:none;">
+            Buscando en los archivos... por favor, aguarde.
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('qa-form');
+        const questionInput = document.getElementById('question-input');
+        const responseArea = document.getElementById('response-area');
+        const answerEl = document.getElementById('answer');
+        const citationsListEl = document.getElementById('citations-list');
+        const loader = document.getElementById('loader');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = questionInput.value;
+            if (!question) return;
+
+            // Mostrar loader y ocultar respuesta anterior
+            loader.style.display = 'block';
+            responseArea.style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: question }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Mostrar la respuesta
+                answerEl.textContent = data.answer;
+                
+                // Limpiar y mostrar las citas
+                citationsListEl.innerHTML = '';
+                if (data.citations && data.citations.length > 0) {
+                    data.citations.forEach(citation => {
+                        const citationDiv = document.createElement('div');
+                        citationDiv.className = 'citation';
+                        
+                        const sourceLink = document.createElement('a');
+                        sourceLink.href = citation.source;
+                        sourceLink.textContent = citation.source;
+                        sourceLink.target = '_blank'; // Abrir en nueva pestaña
+
+                        citationDiv.appendChild(sourceLink);
+                        citationsListEl.appendChild(citationDiv);
+                    });
+                } else {
+                    citationsListEl.textContent = 'No se utilizaron fuentes específicas para esta respuesta.';
+                }
+                
+                responseArea.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error al realizar la consulta:', error);
+                answerEl.textContent = 'Hubo un error al conectar con el archivo. Por favor, intente de nuevo más tarde.';
+                citationsListEl.innerHTML = '';
+                responseArea.style.display = 'block';
+            } finally {
+                // Ocultar loader
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>
