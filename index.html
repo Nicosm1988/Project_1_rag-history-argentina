@@ -27,7 +27,7 @@
 
         header {
             text-align: center;
-            border-bottom: 2px solid #8B0000; /* Bordó oscuro */
+            border-bottom: 2px solid #8B0000;
             padding-bottom: 1rem;
             margin-bottom: 2rem;
         }
@@ -37,6 +37,7 @@
             font-size: 2.5rem;
             color: #1a1a1a;
             margin: 0;
+            line-height: 1.2;
         }
 
         header p {
@@ -44,6 +45,16 @@
             font-style: italic;
             font-size: 1.1rem;
             color: #666;
+            line-height: 1.3;
+        }
+
+        /* --- NUEVO ESTILO PARA LAS TRADUCCIONES --- */
+        .translation {
+            display: block; /* Esto crea el salto de línea */
+            font-size: 0.75em; /* Un poco más pequeño que el texto principal */
+            color: #777;
+            font-weight: normal;
+            margin-top: 0.25rem;
         }
 
         #qa-form {
@@ -69,21 +80,27 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            line-height: 1.2;
+        }
+        
+        #ask-button .translation {
+            font-size: 0.7em;
         }
 
         #ask-button:hover {
             background-color: #a52a2a;
         }
 
-        #response-area h2 {
+        #response-area h2, #response-area h3 {
             font-family: 'Crimson Text', serif;
             border-bottom: 1px solid #eee;
             padding-bottom: 0.5rem;
             margin-top: 0;
+            line-height: 1.2;
         }
 
         #answer {
-            white-space: pre-wrap; /* Mantiene los saltos de línea */
+            white-space: pre-wrap;
         }
 
         #citations {
@@ -98,6 +115,7 @@
             border-left: 3px solid #ccc;
             padding: 0.8rem;
             margin-bottom: 0.5rem;
+            word-wrap: break-word;
         }
         
         .loader {
@@ -112,32 +130,33 @@
 
     <div class="container">
         <header>
-            <h1>Archivo Digital de Historia</h1>
-            <p>Facultad de Humanidades y Ciencias Sociales</p>
+            <h1>Archivo Digital de Historia<span class="translation">Digital History Archive</span></h1>
+            <p>Facultad de Humanidades y Ciencias Sociales<span class="translation">Faculty of Humanities and Social Sciences</span></p>
         </header>
 
         <form id="qa-form">
-            <input type="text" id="question-input" placeholder="Escriba su consulta aquí..." required>
-            <button type="submit" id="ask-button">Consultar</button>
+            <input type="text" id="question-input" placeholder="Escriba su consulta aquí... (Type your query here...)" required>
+            <button type="submit" id="ask-button">Consultar<span class="translation">Submit</span></button>
         </form>
 
         <div id="response-area" style="display:none;">
             <div id="answer-container">
-                <h2>Respuesta del Archivo</h2>
+                <h2>Respuesta del Archivo<span class="translation">Archive's Response</span></h2>
                 <p id="answer"></p>
             </div>
             <div id="citations">
-                <h3>Fuentes Consultadas</h3>
+                <h3>Fuentes Consultadas<span class="translation">Sources Consulted</span></h3>
                 <div id="citations-list"></div>
             </div>
         </div>
         
         <div id="loader" class="loader" style="display:none;">
-            Buscando en los archivos... por favor, aguarde.
+            Buscando en los archivos... por favor, aguarde.<span class="translation">Searching the archives... please wait.</span>
         </div>
     </div>
 
     <script>
+        // El código JavaScript no necesita cambios.
         const form = document.getElementById('qa-form');
         const questionInput = document.getElementById('question-input');
         const responseArea = document.getElementById('response-area');
@@ -150,7 +169,6 @@
             const question = questionInput.value;
             if (!question) return;
 
-            // Mostrar loader y ocultar respuesta anterior
             loader.style.display = 'block';
             responseArea.style.display = 'none';
 
@@ -164,17 +182,18 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.statusText}`);
+                    throw new Error(`Error del servidor (Server error): ${response.statusText}`);
                 }
 
                 const data = await response.json();
                 
-                // Mostrar la respuesta
                 answerEl.textContent = data.answer;
                 
-                // Limpiar y mostrar las citas
                 citationsListEl.innerHTML = '';
+                const citationsHeader = document.querySelector('#citations h3');
+
                 if (data.citations && data.citations.length > 0) {
+                    citationsHeader.style.display = 'block';
                     data.citations.forEach(citation => {
                         const citationDiv = document.createElement('div');
                         citationDiv.className = 'citation';
@@ -182,24 +201,23 @@
                         const sourceLink = document.createElement('a');
                         sourceLink.href = citation.source;
                         sourceLink.textContent = citation.source;
-                        sourceLink.target = '_blank'; // Abrir en nueva pestaña
+                        sourceLink.target = '_blank';
 
                         citationDiv.appendChild(sourceLink);
                         citationsListEl.appendChild(citationDiv);
                     });
                 } else {
-                    citationsListEl.textContent = 'No se utilizaron fuentes específicas para esta respuesta.';
+                    citationsHeader.style.display = 'none';
                 }
                 
                 responseArea.style.display = 'block';
 
             } catch (error) {
                 console.error('Error al realizar la consulta:', error);
-                answerEl.textContent = 'Hubo un error al conectar con el archivo. Por favor, intente de nuevo más tarde.';
+                answerEl.textContent = 'Hubo un error al conectar con el archivo. Por favor, intente de nuevo más tarde. (There was an error connecting to the archive. Please try again later.)';
                 citationsListEl.innerHTML = '';
                 responseArea.style.display = 'block';
             } finally {
-                // Ocultar loader
                 loader.style.display = 'none';
             }
         });
